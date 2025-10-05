@@ -8,8 +8,8 @@ import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 
 function PrivateRoute({ children }) {
-  const { token } = useContext(AuthContext);
-  return token ? children : <Navigate to="/" />;
+  const { authTokens } = useContext(AuthContext);
+  return authTokens ? children : <Navigate to="/" />;
 }
 
 export default function App() {

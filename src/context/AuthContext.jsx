@@ -4,29 +4,35 @@ export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [authTokens, setAuthTokens] = useState(() => {
+    const raw = localStorage.getItem("authTokens");
+    return raw ? JSON.parse(raw) : null;       // ← always an object {access, refresh}
+  });
 
   useEffect(() => {
-    if (token) {
-      // later: fetch user from backend
+    if (authTokens) {
+      // later: hit a /me/ endpoint; for now, placeholder
       setUser({ email: "demo@example.com" });
+    } else {
+      setUser(null);
     }
-  }, [token]);
+  }, [authTokens]);
 
-  const login = (tokenValue, userData) => {
-    setToken(tokenValue);
+  const login = (tokens, userData) => {
+    // tokens must be { access, refresh } from /api/login/
+    setAuthTokens(tokens);
+    localStorage.setItem("authTokens", JSON.stringify(tokens));
     setUser(userData);
-    localStorage.setItem("token", tokenValue);
   };
 
   const logout = () => {
-    setToken(null);
+    setAuthTokens(null);
+    localStorage.removeItem("authTokens");
     setUser(null);
-    localStorage.removeItem("token");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, authTokens, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

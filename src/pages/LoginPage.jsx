@@ -23,7 +23,7 @@ export default function LoginPage() {
 
       console.debug("[LOGIN] response data:", data); // should be { access, refresh }
       
-      login(data); 
+      login(data, { email });
 
       console.log("[LOGIN] stored tokens in context/localStorage");
       navigate("/home");

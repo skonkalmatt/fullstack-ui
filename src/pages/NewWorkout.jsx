@@ -1,6 +1,6 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../lib/axios";
 import { AuthContext } from "../context/AuthContext";
 
 export default function NewWorkout() {
@@ -9,22 +9,18 @@ export default function NewWorkout() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+       if (!authTokens?.access) {
+         navigate("/login");
+      }
+     }, [authTokens, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
-      const res = await axios.post(
-        "http://127.0.0.1:8000/api/workouts/",
-        { notes },
-        {
-          headers: {
-            Authorization: `Bearer ${authTokens.access}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      // ✅ redirect to the new workout’s detail page
+      const res = await api.post("/workouts/", { notes });
       navigate(`/workout/${res.data.id}`);
     } catch (err) {
       console.error("Failed to create workout", err);
