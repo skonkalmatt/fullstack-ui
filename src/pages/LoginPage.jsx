@@ -7,45 +7,36 @@ export default function LoginPage() {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const payload = { username: email, password };
-    console.debug("[LOGIN] sending to /login/:", payload);
-    
-     try {
+    try {
       const { data } = await api.post("/login/", {
         username: email,
         password,
       });
-
-      console.debug("[LOGIN] response data:", data); // should be { access, refresh }
-      
       login(data, { email });
-
-      console.log("[LOGIN] stored tokens in context/localStorage");
       navigate("/home");
     } catch (err) {
-      console.error(
-        "[LOGIN] failed:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
-      alert("Invalid login");
+      setError(err.response?.data?.detail || "Invalid email or password.");
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">Lift Tracker</h2>
+    <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f] px-4">
+      <div className="w-full max-w-sm">
+        <h1 className="text-3xl font-bold text-white text-center mb-8">
+          Lift Tracker
+        </h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="email"
             placeholder="Email"
-            className="p-2 border rounded"
+            className="w-full"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -53,21 +44,22 @@ export default function LoginPage() {
           <input
             type="password"
             placeholder="Password"
-            className="p-2 border rounded"
+            className="w-full"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
-            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
-            Login
+            Log in
           </button>
         </form>
-        <p className="mt-4 text-center text-sm">
-          Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline">
+        <p className="mt-6 text-center text-sm text-zinc-500">
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="text-indigo-400 hover:text-indigo-300">
             Sign up
           </Link>
         </p>

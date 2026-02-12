@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from "react";
+import { api } from "../lib/axios";
 
 export const AuthContext = createContext();
 
@@ -6,13 +7,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authTokens, setAuthTokens] = useState(() => {
     const raw = localStorage.getItem("authTokens");
-    return raw ? JSON.parse(raw) : null;       // ← always an object {access, refresh}
+    return raw ? JSON.parse(raw) : null;
   });
 
   useEffect(() => {
     if (authTokens) {
-      // later: hit a /me/ endpoint; for now, placeholder
-      setUser({ email: "demo@example.com" });
+      api
+        .get("/me/")
+        .then((res) => setUser(res.data))
+        .catch(() => {
+          setAuthTokens(null);
+          localStorage.removeItem("authTokens");
+          setUser(null);
+        });
     } else {
       setUser(null);
     }

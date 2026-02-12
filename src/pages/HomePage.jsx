@@ -1,70 +1,93 @@
-import { useEffect, useState, useContext } from "react";
-import axios from "axios";
-import { AuthContext } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../lib/axios";
 
 export default function HomePage() {
-  const { authTokens, logoutUser } = useContext(AuthContext);
   const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authTokens) {
-      axios
-        .get("http://127.0.0.1:8000/api/workouts/", {
-          headers: {
-            Authorization: `Bearer ${authTokens.access}`,
-          },
-        })
-        .then((res) => {
-          setWorkouts(res.data);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch workouts:", err);
-        });
+  const fetchWorkouts = () => {
+    api
+      .get("/workouts/")
+      .then((res) => setWorkouts(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(fetchWorkouts, []);
+
+  const deleteWorkout = async (wId) => {
+    if (!window.confirm("Delete this workout?")) return;
+    try {
+      await api.delete(`/workouts/${wId}/`);
+      setWorkouts((prev) => prev.filter((w) => w.id !== wId));
+    } catch {
+      /* ignore */
     }
-  }, [authTokens]);
+  };
+
+  const summarizeExercises = (exercises) => {
+    const names = [...new Set(exercises.map((e) => e.exercise_name))];
+    if (names.length === 0) return "No exercises";
+    if (names.length <= 2) return names.join(", ");
+    return `${names.slice(0, 2).join(", ")} +${names.length - 2} more`;
+  };
+
+  if (loading) {
+    return <p className="text-zinc-500 py-12 text-center">Loading...</p>;
+  }
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">My Workouts</h1>
-        <button
-          onClick={logoutUser}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+        <h1 className="text-2xl font-bold text-white">My Workouts</h1>
+        <Link
+          to="/new-workout"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors no-underline"
         >
-          Logout
-        </button>
+          + New Workout
+        </Link>
       </div>
 
-      <Link
-        to="/new-workout"
-        className="inline-block mb-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        ➕ Start New Workout
-      </Link>
-
       {workouts.length === 0 ? (
-        <p>No workouts yet. Start one above!</p>
+        <div className="text-center py-16">
+          <p className="text-zinc-500 text-lg mb-2">No workouts yet</p>
+          <p className="text-zinc-600 text-sm">
+            Tap &quot;New Workout&quot; to log your first session.
+          </p>
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {workouts.map((workout) => (
+        <div className="flex flex-col gap-3">
+          {workouts.map((w) => (
             <div
-              key={workout.id}
-              className="border p-4 rounded-lg shadow hover:shadow-lg"
+              key={w.id}
+              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 flex items-center justify-between"
             >
-              <h2 className="text-lg font-semibold">
-                Workout on {new Date(workout.date).toLocaleDateString()}
-              </h2>
-              <p className="text-gray-600">{workout.notes}</p>
-              <p className="text-sm text-gray-500">
-                {workout.exercises.length} exercises
-              </p>
               <Link
-                to={`/workout/${workout.id}`}
-                className="text-blue-600 hover:underline text-sm"
+                to={`/workout/${w.id}`}
+                className="flex-1 min-w-0 no-underline"
               >
-                View Details →
+                <p className="text-white font-medium">
+                  {new Date(w.date).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+                <p className="text-zinc-400 text-sm truncate">
+                  {summarizeExercises(w.exercises)}
+                </p>
+                <p className="text-zinc-600 text-xs mt-1">
+                  {w.exercises.length} set{w.exercises.length !== 1 && "s"}
+                </p>
               </Link>
+              <button
+                onClick={() => deleteWorkout(w.id)}
+                className="ml-4 text-zinc-600 hover:text-red-400 bg-transparent border-none text-lg transition-colors shrink-0"
+                title="Delete workout"
+              >
+                x
+              </button>
             </div>
           ))}
         </div>

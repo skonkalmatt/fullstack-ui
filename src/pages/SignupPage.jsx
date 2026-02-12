@@ -7,68 +7,74 @@ export default function SignupPage() {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
-      // 1. create account
       await api.post("/signup/", {
-        username: email, // Django expects username
+        username: email,
         email,
         password,
       });
 
-      // 2. log in to get tokens
       const { data } = await api.post("/login/", {
         username: email,
         password,
       });
 
-      login(data.access, { email });
+      login(data, { email });
       navigate("/home");
     } catch (err) {
-      if (err.response) {
-        console.error("Signup error:", err.response.data);
-        alert("Signup failed: " + JSON.stringify(err.response.data));
+      const d = err.response?.data;
+      if (d) {
+        const msg = d.username?.[0] || d.email?.[0] || d.password?.[0] || JSON.stringify(d);
+        setError(msg);
       } else {
-        console.error("Signup error:", err);
-        alert("Signup failed: network or server error");
+        setError("Something went wrong. Please try again.");
       }
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">Create Account</h2>
+    <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f] px-4">
+      <div className="w-full max-w-sm">
+        <h1 className="text-3xl font-bold text-white text-center mb-2">
+          Lift Tracker
+        </h1>
+        <p className="text-zinc-500 text-center mb-8">Create your account</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="email"
             placeholder="Email"
-            className="p-2 border rounded"
+            className="w-full"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
           <input
             type="password"
-            placeholder="Password"
-            className="p-2 border rounded"
+            placeholder="Password (8+ characters)"
+            className="w-full"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
           />
+          {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
-            className="bg-green-600 text-white p-2 rounded hover:bg-green-700"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
-            Sign Up
+            Sign up
           </button>
         </form>
-        <p className="mt-4 text-center text-sm">
+        <p className="mt-6 text-center text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link to="/" className="text-blue-600 hover:underline">
+          <Link to="/" className="text-indigo-400 hover:text-indigo-300">
             Log in
           </Link>
         </p>
